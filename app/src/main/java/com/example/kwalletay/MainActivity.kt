@@ -12,6 +12,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -24,6 +26,8 @@ import com.example.kwalletay.ui.navigation.Screen
 import com.example.kwalletay.ui.navigation.bottomNavItems
 import com.example.kwalletay.ui.screens.*
 import com.example.kwalletay.ui.theme.KwalletTheme
+import com.example.kwalletay.ui.viewmodel.TransferViewModel
+import com.example.kwalletay.ui.viewmodel.ViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,19 +134,28 @@ class MainActivity : ComponentActivity() {
                                 onSettingsClick = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
                                 onDepositClick = { startActivity(Intent(this@MainActivity, DepositActivity::class.java)) },
                                 onPaybillClick = { navController.navigate(Screen.PayBill.route) },
-                                onTransferClick = { startActivity(Intent(this@MainActivity, TransferActivity::class.java)) },
-                                onReferClick = {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, "Join Kwallet!")
-                                    }
-                                    startActivity(Intent.createChooser(shareIntent, "Refer via"))
-                                },
+                                onTransferClick = { navController.navigate(Screen.Transfer.route) },
+                                onReferClick = { navController.navigate(Screen.ReferAndEarn.route) },
                                 onSeeAllClick = { startActivity(Intent(this@MainActivity, HistoryActivity::class.java)) }
                             )
                         }
                         composable(Screen.PayBill.route) {
                             PayBillScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+                        composable(Screen.Transfer.route) {
+                            val context = LocalContext.current
+                            val transferViewModel: TransferViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            TransferScreen(
+                                viewModel = transferViewModel,
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+                        composable(Screen.ReferAndEarn.route) {
+                            ReferAndEarnScreen(
                                 onBackClick = { navController.popBackStack() }
                             )
                         }

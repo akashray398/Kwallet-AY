@@ -14,6 +14,9 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 
+    @Query("SELECT SUM(amount) FROM transactions")
+    fun getBalance(): Flow<Double?>
+
     @Query("DELETE FROM transactions")
     suspend fun clearAll()
 }

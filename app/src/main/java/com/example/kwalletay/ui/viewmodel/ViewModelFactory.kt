@@ -5,15 +5,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.kwalletay.data.local.AppDatabase
 import com.example.kwalletay.data.repository.DepositRepository
+import com.example.kwalletay.data.repository.TransferRepositoryImpl
 
 class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DepositViewModel::class.java)) {
-            val database = AppDatabase.getDatabase(context)
-            val repository = DepositRepository(database.transactionDao())
-            @Suppress("UNCHECKED_CAST")
-            return DepositViewModel(repository) as T
+        val database = AppDatabase.getDatabase(context)
+        val transactionDao = database.transactionDao()
+        
+        return when {
+            modelClass.isAssignableFrom(DepositViewModel::class.java) -> {
+                val repository = DepositRepository(transactionDao)
+                @Suppress("UNCHECKED_CAST")
+                DepositViewModel(repository) as T
+            }
+            modelClass.isAssignableFrom(TransferViewModel::class.java) -> {
+                val repository = TransferRepositoryImpl(transactionDao)
+                @Suppress("UNCHECKED_CAST")
+                TransferViewModel(repository) as T
+            }
+            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
