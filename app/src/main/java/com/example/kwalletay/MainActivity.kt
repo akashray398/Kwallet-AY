@@ -1,6 +1,5 @@
 package com.example.kwalletay
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +11,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -20,10 +21,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.kwalletay.data.local.AppDatabase
+import com.example.kwalletay.data.local.TransactionEntity
+import com.example.kwalletay.data.repository.TransactionRepository
 import com.example.kwalletay.ui.navigation.Screen
 import com.example.kwalletay.ui.navigation.bottomNavItems
 import com.example.kwalletay.ui.screens.*
 import com.example.kwalletay.ui.theme.KwalletTheme
+import com.example.kwalletay.ui.viewmodel.TransactionHistoryViewModel
+import com.example.kwalletay.ui.viewmodel.TransferViewModel
+import com.example.kwalletay.ui.viewmodel.ViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,30 +132,133 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.Home.route) {
                             HomeScreen(
-                                onProfileClick = { startActivity(Intent(this@MainActivity, ProfileActivity::class.java)) },
+                                onProfileClick = { navController.navigate(Screen.Profile.route) },
                                 onNotificationClick = { /* Handle */ },
-                                onSettingsClick = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
-                                onDepositClick = { startActivity(Intent(this@MainActivity, DepositActivity::class.java)) },
+                                onSettingsClick = { /* Handle */ },
+                                onDepositClick = { navController.navigate(Screen.Deposit.route) },
                                 onPaybillClick = { navController.navigate(Screen.PayBill.route) },
-                                onTransferClick = { startActivity(Intent(this@MainActivity, TransferActivity::class.java)) },
-                                onReferClick = {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, "Join Kwallet!")
-                                    }
-                                    startActivity(Intent.createChooser(shareIntent, "Refer via"))
-                                },
-                                onSeeAllClick = { startActivity(Intent(this@MainActivity, HistoryActivity::class.java)) }
+                                onTransferClick = { navController.navigate(Screen.Transfer.route) },
+                                onReferClick = { navController.navigate(Screen.ReferAndEarn.route) },
+                                onSeeAllClick = { navController.navigate(Screen.History.route) }
                             )
                         }
                         composable(Screen.PayBill.route) {
                             PayBillScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { id ->
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.PayBill.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                        composable(Screen.Deposit.route) {
+                            val context = LocalContext.current
+                            val depositViewModel: com.example.kwalletay.ui.viewmodel.DepositViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            DepositScreen(
+                                viewModel = depositViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { transaction ->
+                                    val id = (transaction as TransactionEntity).id
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.Deposit.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                        composable(Screen.Transfer.route) {
+                            val context = LocalContext.current
+                            val transferViewModel: TransferViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            TransferScreen(
+                                viewModel = transferViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { id ->
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.Transfer.route) { inclusive = true }
+                                    }
+                                },
+                                onFailure = { error ->
+                                    navController.navigate(Screen.Failure.createRoute(error))
+                                }
+                            )
+                        }
+                        composable(Screen.ReferAndEarn.route) {
+                            ReferAndEarnScreen(
                                 onBackClick = { navController.popBackStack() }
                             )
                         }
                         composable(Screen.Explorer.route) { /* Explorer Screen */ }
-                        composable(Screen.History.route) { /* History Screen */ }
+                        composable(Screen.History.route) {
+                            val context = LocalContext.current
+                            val historyViewModel: TransactionHistoryViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            TransactionHistoryScreen(
+                                viewModel = historyViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onTransactionClick = { id ->
+                                    navController.navigate(Screen.TransactionDetail.createRoute(id))
+                                }
+                            )
+                        }
                         composable(Screen.Profile.route) { /* Profile Screen */ }
+                        
+                        composable(
+                            route = Screen.Success.route,
+                            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val context = LocalContext.current
+                            val transactionId = backStackEntry.arguments?.getInt("transactionId") ?: 0
+                            val repository = TransactionRepository(AppDatabase.getDatabase(context).transactionDao())
+                            SuccessScreen(
+                                transactionId = transactionId,
+                                repository = repository,
+                                onBackHome = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                },
+                                onViewHistory = {
+                                    navController.navigate(Screen.History.route) {
+                                        popUpTo(Screen.Home.route)
+                                    }
+                                }
+                            )
+                        }
+                        
+                        composable(
+                            route = Screen.Failure.route,
+                            arguments = listOf(navArgument("errorMessage") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val errorMessage = backStackEntry.arguments?.getString("errorMessage") ?: "Unknown Error"
+                            FailureScreen(
+                                errorMessage = errorMessage,
+                                onRetry = { navController.popBackStack() },
+                                onBackHome = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(
+                            route = Screen.TransactionDetail.route,
+                            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val context = LocalContext.current
+                            val transactionId = backStackEntry.arguments?.getInt("transactionId") ?: 0
+                            val repository = TransactionRepository(AppDatabase.getDatabase(context).transactionDao())
+                            TransactionDetailScreen(
+                                transactionId = transactionId,
+                                repository = repository,
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
                     }
                 }
             }

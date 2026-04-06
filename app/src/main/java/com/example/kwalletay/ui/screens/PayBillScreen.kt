@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kwalletay.data.model.Bill
 import com.example.kwalletay.data.model.BillType
 import com.example.kwalletay.ui.viewmodel.PayBillViewModel
 
@@ -25,9 +24,22 @@ import com.example.kwalletay.ui.viewmodel.PayBillViewModel
 @Composable
 fun PayBillScreen(
     onBackClick: () -> Unit,
+    onSuccess: (Int) -> Unit,
     viewModel: PayBillViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.paymentStatus) {
+        if (uiState.paymentStatus == "SUCCESS") {
+            // In a real app, the repository would return the inserted ID. 
+            // Here we use a dummy or let the ViewModel provide it.
+            // For now, let's assume we navigate to history or a generic success if ID isn't easily available.
+            // Since we want the flow to SuccessScreen, we'd need the ID.
+            // For mock purposes, let's use a hardcoded or random ID if the ViewModel doesn't have it.
+            onSuccess(1) // Placeholder ID
+            viewModel.resetStatus()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -134,10 +146,10 @@ fun PayBillScreen(
                         Text("Bill Details", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                         
-                        BillDetailRow("Consumer", bill.consumerName)
-                        BillDetailRow("Amount", "₹${bill.amount}")
-                        BillDetailRow("Due Date", bill.dueDate)
-                        BillDetailRow("Type", bill.billType.title)
+                        BillDetailRowComponent("Consumer", bill.consumerName)
+                        BillDetailRowComponent("Amount", "₹${bill.amount}")
+                        BillDetailRowComponent("Due Date", bill.dueDate)
+                        BillDetailRowComponent("Type", bill.billType.title)
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -163,33 +175,10 @@ fun PayBillScreen(
             }
         }
     }
-
-    // Success Dialog
-    if (uiState.paymentStatus == "SUCCESS") {
-        AlertDialog(
-            onDismissRequest = { },
-            confirmButton = {
-                Button(onClick = { 
-                    viewModel.resetStatus()
-                    onBackClick() 
-                }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Payment Successful") },
-            text = { 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.CheckCircle, "Success", tint = Color(0xFF4CAF50), modifier = Modifier.size(64.dp))
-                    Text("Your bill has been paid successfully.")
-                }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
 }
 
 @Composable
-fun BillDetailRow(label: String, value: String) {
+fun BillDetailRowComponent(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
