@@ -16,7 +16,7 @@ data class TransferUiState(
     val note: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val transferResult: String? = null,
+    val successTransactionId: Int? = null,
     val showConfirmation: Boolean = false
 )
 
@@ -89,10 +89,9 @@ class TransferViewModel(
         _uiState.update { it.copy(showConfirmation = false, isLoading = true) }
 
         viewModelScope.launch {
-            val result = repository.processTransfer(selectedRecipient, amountVal, state.note)
-            when (result) {
+            when (val result = repository.processTransfer(selectedRecipient, amountVal, state.note)) {
                 is Result.Success -> {
-                    _uiState.update { it.copy(isLoading = false, transferResult = "Success") }
+                    _uiState.update { it.copy(isLoading = false, successTransactionId = result.data) }
                 }
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
@@ -106,7 +105,7 @@ class TransferViewModel(
         _uiState.update { it.copy(showConfirmation = false) }
     }
     
-    fun resetResult() {
-        _uiState.update { it.copy(transferResult = null) }
+    fun resetState() {
+        _uiState.update { it.copy(successTransactionId = null, errorMessage = null) }
     }
 }

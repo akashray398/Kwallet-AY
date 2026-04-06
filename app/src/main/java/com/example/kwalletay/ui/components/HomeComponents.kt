@@ -1,5 +1,6 @@
 package com.example.kwalletay.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,6 +41,7 @@ fun HomeHeader(
             modifier = Modifier
                 .size(55.dp)
                 .clip(CircleShape)
+                .bounceClick()
                 .clickable { onProfileClick() },
             contentScale = ContentScale.Crop
         )
@@ -50,6 +53,7 @@ fun HomeHeader(
             modifier = Modifier
                 .size(55.dp)
                 .background(Color.White, RoundedCornerShape(10.dp))
+                .bounceClick()
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.notification),
@@ -66,6 +70,7 @@ fun HomeHeader(
             modifier = Modifier
                 .size(55.dp)
                 .background(Color.White, RoundedCornerShape(10.dp))
+                .bounceClick()
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.setting),
@@ -83,12 +88,12 @@ fun BalanceSection(balance: String) {
         Text(
             text = "Checking account..",
             fontSize = 16.sp,
-            color = Color.Black
+            color = Color.Black.copy(alpha = 0.6f)
         )
         Text(
             text = balance,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 42.sp,
+            fontWeight = FontWeight.ExtraBold,
             color = Color.Black
         )
     }
@@ -104,7 +109,7 @@ fun ActionButtons(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         ActionItem(
             iconRes = R.drawable.deposite,
@@ -131,7 +136,9 @@ fun ActionButtons(
 fun ActionItem(iconRes: Int, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier = modifier
-            .background(Color.White, RoundedCornerShape(15.dp))
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(18.dp))
+            .background(Color.White, RoundedCornerShape(18.dp))
+            .bounceClick()
             .clickable { onClick() }
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -139,12 +146,13 @@ fun ActionItem(iconRes: Int, label: String, modifier: Modifier = Modifier, onCli
         Image(
             painter = painterResource(id = iconRes),
             contentDescription = label,
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(42.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
             color = Color.Black
         )
     }
@@ -153,29 +161,33 @@ fun ActionItem(iconRes: Int, label: String, modifier: Modifier = Modifier, onCli
 @Composable
 fun ReferralCard(onReferClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(15.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(215.dp)
+            .height(210.dp)
             .padding(vertical = 16.dp)
+            .bounceClick()
     ) {
-        Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
             Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
-                Text(text = "Refer friends", fontSize = 18.sp, color = Color.Black)
-                Text(text = "Get ₹10", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = "Refer friends", fontSize = 16.sp, color = Color.Gray)
+                Text(text = "Get ₹100", fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Text(
                     text = "For every new user you refer to Kwallet",
-                    color = Color.Black,
-                    modifier = Modifier.width(150.dp)
+                    color = Color.Black.copy(alpha = 0.7f),
+                    fontSize = 13.sp,
+                    modifier = Modifier.width(160.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 Button(
                     onClick = onReferClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Green),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                 ) {
-                    Text(text = "Refer Now", color = Color.White)
+                    Text(text = "Refer Now", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
             Image(
@@ -193,12 +205,12 @@ fun TransactionHistoryHeader(onSeeAll: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(top = 24.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Transaction History",
+            text = "Recent Transactions",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -207,7 +219,10 @@ fun TransactionHistoryHeader(onSeeAll: () -> Unit) {
             text = "See All",
             fontWeight = FontWeight.Bold,
             color = DarkGreen,
-            modifier = Modifier.clickable { onSeeAll() }
+            modifier = Modifier
+                .bounceClick()
+                .clickable { onSeeAll() }
+                .padding(4.dp)
         )
     }
 }

@@ -1,6 +1,5 @@
 package com.example.kwalletay
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.kwalletay.data.local.AppDatabase
+import com.example.kwalletay.data.local.TransactionEntity
 import com.example.kwalletay.data.repository.TransactionRepository
 import com.example.kwalletay.ui.navigation.Screen
 import com.example.kwalletay.ui.navigation.bottomNavItems
@@ -144,11 +144,29 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.PayBill.route) {
                             PayBillScreen(
-                                onBackClick = { navController.popBackStack() }
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { id ->
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.PayBill.route) { inclusive = true }
+                                    }
+                                }
                             )
                         }
                         composable(Screen.Deposit.route) {
-                            DepositScreen(onBackClick = { navController.popBackStack() })
+                            val context = LocalContext.current
+                            val depositViewModel: com.example.kwalletay.ui.viewmodel.DepositViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            DepositScreen(
+                                viewModel = depositViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { transaction ->
+                                    val id = (transaction as TransactionEntity).id
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.Deposit.route) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
                         composable(Screen.Transfer.route) {
                             val context = LocalContext.current
@@ -157,7 +175,15 @@ class MainActivity : ComponentActivity() {
                             )
                             TransferScreen(
                                 viewModel = transferViewModel,
-                                onBackClick = { navController.popBackStack() }
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess = { id ->
+                                    navController.navigate(Screen.Success.createRoute(id)) {
+                                        popUpTo(Screen.Transfer.route) { inclusive = true }
+                                    }
+                                },
+                                onFailure = { error ->
+                                    navController.navigate(Screen.Failure.createRoute(error))
+                                }
                             )
                         }
                         composable(Screen.ReferAndEarn.route) {
@@ -180,6 +206,46 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screen.Profile.route) { /* Profile Screen */ }
+                        
+                        composable(
+                            route = Screen.Success.route,
+                            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val context = LocalContext.current
+                            val transactionId = backStackEntry.arguments?.getInt("transactionId") ?: 0
+                            val repository = TransactionRepository(AppDatabase.getDatabase(context).transactionDao())
+                            SuccessScreen(
+                                transactionId = transactionId,
+                                repository = repository,
+                                onBackHome = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                },
+                                onViewHistory = {
+                                    navController.navigate(Screen.History.route) {
+                                        popUpTo(Screen.Home.route)
+                                    }
+                                }
+                            )
+                        }
+                        
+                        composable(
+                            route = Screen.Failure.route,
+                            arguments = listOf(navArgument("errorMessage") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val errorMessage = backStackEntry.arguments?.getString("errorMessage") ?: "Unknown Error"
+                            FailureScreen(
+                                errorMessage = errorMessage,
+                                onRetry = { navController.popBackStack() },
+                                onBackHome = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
                         composable(
                             route = Screen.TransactionDetail.route,
                             arguments = listOf(navArgument("transactionId") { type = NavType.IntType })

@@ -30,7 +30,7 @@ interface TransactionDao {
     suspend fun getTransactionById(id: Int): TransactionEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTransaction(transaction: TransactionEntity)
+    suspend fun insertTransaction(transaction: TransactionEntity): Long
 
     @Query("SELECT SUM(amount) FROM transactions")
     fun getBalance(): Flow<Double?>

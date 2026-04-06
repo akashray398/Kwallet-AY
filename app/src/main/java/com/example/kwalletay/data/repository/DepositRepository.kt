@@ -2,10 +2,9 @@ package com.example.kwalletay.data.repository
 
 import com.example.kwalletay.data.local.TransactionDao
 import com.example.kwalletay.data.local.TransactionEntity
+import com.example.kwalletay.data.local.TransactionStatus
+import com.example.kwalletay.data.local.TransactionType
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import kotlin.random.Random
 
@@ -15,19 +14,21 @@ class DepositRepository(private val transactionDao: TransactionDao) {
         return try {
             delay(2000) // Simulate network delay
             
-            // Randomly simulate success or failure (80% success)
-            if (Random.nextFloat() < 0.8f) {
+            // Randomly simulate success or failure (90% success for demo)
+            if (Random.nextFloat() < 0.9f) {
                 val transaction = TransactionEntity(
-                    title = "Deposit to Wallet",
-                    date = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date()),
+                    title = "Deposit via $paymentMethod",
+                    date = System.currentTimeMillis(),
                     amount = amount,
-                    paymentMethod = paymentMethod,
-                    transactionId = "TXN${UUID.randomUUID().toString().take(8).uppercase()}"
+                    type = TransactionType.CREDIT,
+                    status = TransactionStatus.SUCCESS,
+                    category = "Deposit",
+                    transactionId = "DEP${UUID.randomUUID().toString().take(8).uppercase()}"
                 )
-                transactionDao.insertTransaction(transaction)
-                Result.Success(transaction)
+                val id = transactionDao.insertTransaction(transaction).toInt()
+                Result.Success(transaction.copy(id = id))
             } else {
-                Result.Error("Payment failed. Please try again.")
+                Result.Error("Payment declined by bank. Please try another method.")
             }
         } catch (e: Exception) {
             Result.Error(e.message ?: "An unknown error occurred")

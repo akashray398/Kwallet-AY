@@ -1,5 +1,6 @@
 package com.example.kwalletay.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,71 +45,108 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (uiState.isLoading && !uiState.isRefreshing) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF35E167))
-                }
-            } else if (uiState.errorMessage != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = uiState.errorMessage!!,
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 16.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            ) {
+                item {
+                    HomeHeader(
+                        onProfileClick = onProfileClick,
+                        onNotificationClick = onNotificationClick,
+                        onSettingsClick = onSettingsClick
                     )
-                    Button(
-                        onClick = { viewModel.loadHomeData() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF35E167))
-                    ) {
-                        Text("Retry", color = Color.White)
+                }
+                
+                item {
+                    BalanceSection(balance = uiState.balance)
+                }
+                
+                item {
+                    ActionButtons(
+                        onDeposit = onDepositClick,
+                        onPaybill = onPaybillClick,
+                        onTransfer = onTransferClick
+                    )
+                }
+                
+                item {
+                    ReferralCard(onReferClick = onReferClick)
+                }
+                
+                item {
+                    TransactionHistoryHeader(onSeeAll = onSeeAllClick)
+                }
+
+                if (uiState.isLoading && !uiState.isRefreshing) {
+                    items(5) {
+                        TransactionShimmerItem()
+                    }
+                } else if (uiState.errorMessage != null) {
+                    item {
+                        ErrorState(
+                            message = uiState.errorMessage!!,
+                            onRetry = { viewModel.loadHomeData() }
+                        )
+                    }
+                } else if (uiState.transactions.isEmpty()) {
+                    item {
+                        EmptyState(message = "No recent transactions")
+                    }
+                } else {
+                    items(uiState.transactions) { transaction ->
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn() + slideInHorizontally()
+                        ) {
+                            TransactionItem(
+                                transaction = transaction,
+                                onClick = { /* Handle transaction click */ }
+                            )
+                        }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp)
-                ) {
-                    item {
-                        HomeHeader(
-                            onProfileClick = onProfileClick,
-                            onNotificationClick = onNotificationClick,
-                            onSettingsClick = onSettingsClick
-                        )
-                    }
-                    item {
-                        BalanceSection(balance = uiState.balance)
-                    }
-                    item {
-                        ActionButtons(
-                            onDeposit = onDepositClick,
-                            onPaybill = onPaybillClick,
-                            onTransfer = onTransferClick
-                        )
-                    }
-                    item {
-                        ReferralCard(onReferClick = onReferClick)
-                    }
-                    item {
-                        TransactionHistoryHeader(onSeeAll = onSeeAllClick)
-                    }
-                    items(uiState.transactions) { transaction ->
-                        TransactionItem(
-                            transaction = transaction,
-                            onClick = { /* Handle transaction click if needed */ }
-                        )
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
+                
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ErrorState(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            color = Color.Red,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF35E167)),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Retry", color = Color.White)
+        }
+    }
+}
+
+@Composable
+fun EmptyState(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 40.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = message, color = Color.Gray)
     }
 }

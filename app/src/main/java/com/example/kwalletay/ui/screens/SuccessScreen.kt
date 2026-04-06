@@ -1,27 +1,40 @@
 package com.example.kwalletay.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kwalletay.R
 import com.example.kwalletay.data.local.TransactionEntity
+import com.example.kwalletay.data.repository.TransactionRepository
+import com.example.kwalletay.ui.components.LottieAnimationView
+import com.example.kwalletay.ui.components.bounceClick
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun SuccessScreen(
-    transaction: TransactionEntity,
+    transactionId: Int,
+    repository: TransactionRepository,
     onBackHome: () -> Unit,
-    onViewTransactions: () -> Unit
+    onViewHistory: () -> Unit
 ) {
+    var transaction by remember { mutableStateOf<TransactionEntity?>(null) }
+    var visible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(transactionId) {
+        transaction = repository.getTransactionById(transactionId)
+        visible = true
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -29,92 +42,110 @@ fun SuccessScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Success Icon
-        Surface(
-            modifier = Modifier.size(100.dp),
-            shape = CircleShape,
-            color = Color(0xFF4CAF50).copy(alpha = 0.1f)
+        // Lottie Success Animation
+        // Note: Add success_anim.json to res/raw/
+        LottieAnimationView(
+            resId = R.raw.success_anim,
+            modifier = Modifier.size(180.dp),
+            iterations = 1
+        )
+
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(tween(1000)) + expandVertically(tween(1000))
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Success",
-                    modifier = Modifier.size(60.dp),
-                    tint = Color(0xFF4CAF50)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Payment Successful!",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF4CAF50)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Your transaction has been processed.",
+                    fontSize = 15.sp,
+                    color = Color.Gray
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Payment Successful!",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF4CAF50)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Your money has been deposited successfully.",
-            fontSize = 14.sp,
-            color = Color.Gray
-        )
-
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Transaction Details Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.1f))
+        // Transaction Details Card with Entrance Animation
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn()
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                DetailRow(label = "Amount", value = "₹${transaction.amount}")
-                DetailRow(label = "Transaction ID", value = transaction.transactionId)
-                DetailRow(label = "Date & Time", value = transaction.date)
-                DetailRow(label = "Payment Method", value = transaction.paymentMethod)
+            transaction?.let { tx ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(18.dp)
+                    ) {
+                        DetailRowItem(label = "Amount", value = "₹${tx.amount}")
+                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                        DetailRowItem(label = "Recipient/Title", value = tx.title)
+                        DetailRowItem(label = "Transaction ID", value = tx.transactionId)
+                        DetailRowItem(label = "Date", value = formatDate(tx.date))
+                    }
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Buttons
+        // Buttons with Bounce Animation
         Button(
             onClick = onBackHome,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp)
+                .height(58.dp)
+                .bounceClick(),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
         ) {
-            Text("Back to Home", fontWeight = FontWeight.Bold)
+            Text("Back to Home", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(
-            onClick = onViewTransactions,
+        TextButton(
+            onClick = onViewHistory,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp)
+                .bounceClick()
         ) {
-            Text("View Transactions", fontWeight = FontWeight.Bold)
+            Text(
+                "View Transaction History",
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
 
 @Composable
-fun DetailRow(label: String, value: String) {
+fun DetailRowItem(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, color = Color.Gray, fontSize = 14.sp)
-        Text(text = value, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(text = value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
+}
+
+private fun formatDate(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }

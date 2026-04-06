@@ -28,6 +28,15 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Deposit : Screen("deposit", "Deposit")
     object Transfer : Screen("transfer", "Transfer")
     object ReferAndEarn : Screen("refer_and_earn", "Refer & Earn")
+    
+    // Result Screens
+    object Success : Screen("success/{transactionId}", "Success") {
+        fun createRoute(transactionId: Int) = "success/$transactionId"
+    }
+    object Failure : Screen("failure/{errorMessage}", "Failure") {
+        fun createRoute(errorMessage: String) = "failure/$errorMessage"
+    }
+
     object TransactionDetail : Screen("transaction_detail/{transactionId}", "Transaction Detail") {
         fun createRoute(transactionId: Int) = "transaction_detail/$transactionId"
     }
