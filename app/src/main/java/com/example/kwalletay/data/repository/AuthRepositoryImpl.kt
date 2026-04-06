@@ -1,6 +1,7 @@
 package com.example.kwalletay.data.repository
 
 import android.app.Activity
+import com.example.kwalletay.data.model.User
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
@@ -16,42 +17,42 @@ import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
 
 class AuthRepositoryImpl(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firebaseAuth: FirebaseAuth = try { FirebaseAuth.getInstance() } catch (e: Exception) { null } ?: throw IllegalStateException("Firebase not initialized")
 ) : AuthRepository {
 
-    override val currentUser: FirebaseUser?
-        get() = firebaseAuth.currentUser
+    override val currentUser: User?
+        get() = firebaseAuth.currentUser?.toUser()
 
-    override fun login(email: String, password: String): Flow<AuthResource<FirebaseUser>> = flow {
+    override fun login(email: String, password: String): Flow<AuthResource<User>> = flow {
         emit(AuthResource.Loading)
         try {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             result.user?.let {
-                emit(AuthResource.Success(it))
+                emit(AuthResource.Success(it.toUser()))
             } ?: emit(AuthResource.Error("User not found"))
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Login failed"))
         }
     }
 
-    override fun signup(email: String, password: String): Flow<AuthResource<FirebaseUser>> = flow {
+    override fun signup(email: String, password: String): Flow<AuthResource<User>> = flow {
         emit(AuthResource.Loading)
         try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             result.user?.let {
-                emit(AuthResource.Success(it))
+                emit(AuthResource.Success(it.toUser()))
             } ?: emit(AuthResource.Error("Signup failed"))
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Signup failed"))
         }
     }
 
-    override fun signInWithCredential(credential: AuthCredential): Flow<AuthResource<FirebaseUser>> = flow {
+    override fun signInWithCredential(credential: AuthCredential): Flow<AuthResource<User>> = flow {
         emit(AuthResource.Loading)
         try {
             val result = firebaseAuth.signInWithCredential(credential).await()
             result.user?.let {
-                emit(AuthResource.Success(it))
+                emit(AuthResource.Success(it.toUser()))
             } ?: emit(AuthResource.Error("Sign in failed"))
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Sign in failed"))
@@ -62,9 +63,7 @@ class AuthRepositoryImpl(
         trySend(AuthResource.Loading)
 
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                // Auto-verification or instant validation
-            }
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
 
             override fun onVerificationFailed(e: FirebaseException) {
                 trySend(AuthResource.Error(e.localizedMessage ?: "OTP sending failed"))
@@ -86,13 +85,13 @@ class AuthRepositoryImpl(
         awaitClose()
     }
 
-    override fun verifyOtp(verificationId: String, otp: String): Flow<AuthResource<FirebaseUser>> = flow {
+    override fun verifyOtp(verificationId: String, otp: String): Flow<AuthResource<User>> = flow {
         emit(AuthResource.Loading)
         try {
             val credential = PhoneAuthProvider.getCredential(verificationId, otp)
             val result = firebaseAuth.signInWithCredential(credential).await()
             result.user?.let {
-                emit(AuthResource.Success(it))
+                emit(AuthResource.Success(it.toUser()))
             } ?: emit(AuthResource.Error("OTP Verification failed"))
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Invalid OTP"))
@@ -102,4 +101,10 @@ class AuthRepositoryImpl(
     override fun logout() {
         firebaseAuth.signOut()
     }
+
+    private fun FirebaseUser.toUser(): User = User(
+        uid = uid,
+        email = email,
+        displayName = displayName
+    )
 }

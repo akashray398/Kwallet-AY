@@ -22,6 +22,11 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Explorer : Screen("explorer", "Explorer", Icons.Default.Search)
     object History : Screen("history", "History", Icons.Default.History)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
+    
+    // Feature Screens
+    object PayBill : Screen("pay_bill", "Pay Bill")
+    object Deposit : Screen("deposit", "Deposit")
+    object Transfer : Screen("transfer", "Transfer")
 }
 
 val bottomNavItems = listOf(

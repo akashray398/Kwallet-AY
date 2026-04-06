@@ -62,7 +62,11 @@ fun PhoneAuthScreen(
             enabled = !uiState.isLoading && phoneNumber.isNotEmpty()
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(size = 24.dp, color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Send OTP")
             }

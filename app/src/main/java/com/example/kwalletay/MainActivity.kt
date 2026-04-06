@@ -34,7 +34,6 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 
-                // Only show bottom bar on main dashboard screens
                 val showBottomBar = bottomNavItems.any { it.route == currentDestination?.route }
 
                 Scaffold(
@@ -130,7 +129,7 @@ class MainActivity : ComponentActivity() {
                                 onNotificationClick = { /* Handle */ },
                                 onSettingsClick = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
                                 onDepositClick = { startActivity(Intent(this@MainActivity, DepositActivity::class.java)) },
-                                onPaybillClick = { startActivity(Intent(this@MainActivity, PaybillActivity::class.java)) },
+                                onPaybillClick = { navController.navigate(Screen.PayBill.route) },
                                 onTransferClick = { startActivity(Intent(this@MainActivity, TransferActivity::class.java)) },
                                 onReferClick = {
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -140,6 +139,11 @@ class MainActivity : ComponentActivity() {
                                     startActivity(Intent.createChooser(shareIntent, "Refer via"))
                                 },
                                 onSeeAllClick = { startActivity(Intent(this@MainActivity, HistoryActivity::class.java)) }
+                            )
+                        }
+                        composable(Screen.PayBill.route) {
+                            PayBillScreen(
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                         composable(Screen.Explorer.route) { /* Explorer Screen */ }

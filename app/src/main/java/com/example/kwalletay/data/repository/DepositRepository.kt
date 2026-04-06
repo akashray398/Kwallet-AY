@@ -25,12 +25,12 @@ class DepositRepository(private val transactionDao: TransactionDao) {
                     transactionId = "TXN${UUID.randomUUID().toString().take(8).uppercase()}"
                 )
                 transactionDao.insertTransaction(transaction)
-                Result.success(transaction)
+                Result.Success(transaction)
             } else {
-                Result.failure(Exception("Payment failed. Please try again."))
+                Result.Error("Payment failed. Please try again.")
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.Error(e.message ?: "An unknown error occurred")
         }
     }
 }

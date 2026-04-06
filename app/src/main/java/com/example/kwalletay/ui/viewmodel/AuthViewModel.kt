@@ -3,17 +3,17 @@ package com.example.kwalletay.ui.viewmodel
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kwalletay.data.model.User
 import com.example.kwalletay.data.repository.AuthRepository
 import com.example.kwalletay.data.repository.AuthResource
-import com.example.kwalletay.data.repository.AuthRepositoryImpl
+import com.example.kwalletay.data.repository.MockAuthRepositoryImpl
 import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 data class AuthUiState(
-    val user: FirebaseUser? = null,
+    val user: User? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isLoginSuccessful: Boolean = false,
@@ -21,7 +21,7 @@ data class AuthUiState(
 )
 
 class AuthViewModel(
-    private val repository: AuthRepository = AuthRepositoryImpl()
+    private val repository: AuthRepository = MockAuthRepositoryImpl()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState(user = repository.currentUser))

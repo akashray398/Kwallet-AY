@@ -1,9 +1,8 @@
 package com.example.kwalletay.data.repository
 
 import android.app.Activity
+import com.example.kwalletay.data.model.User
 import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.PhoneAuthOptions
 import kotlinx.coroutines.flow.Flow
 
 sealed class AuthResource<out T> {
@@ -13,11 +12,11 @@ sealed class AuthResource<out T> {
 }
 
 interface AuthRepository {
-    val currentUser: FirebaseUser?
-    fun login(email: String, password: String): Flow<AuthResource<FirebaseUser>>
-    fun signup(email: String, password: String): Flow<AuthResource<FirebaseUser>>
-    fun signInWithCredential(credential: AuthCredential): Flow<AuthResource<FirebaseUser>>
+    val currentUser: User?
+    fun login(email: String, password: String): Flow<AuthResource<User>>
+    fun signup(email: String, password: String): Flow<AuthResource<User>>
+    fun signInWithCredential(credential: AuthCredential): Flow<AuthResource<User>>
     fun sendOtp(phoneNumber: String, activity: Activity): Flow<AuthResource<String>>
-    fun verifyOtp(verificationId: String, otp: String): Flow<AuthResource<FirebaseUser>>
+    fun verifyOtp(verificationId: String, otp: String): Flow<AuthResource<User>>
     fun logout()
 }

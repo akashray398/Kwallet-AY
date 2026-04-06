@@ -84,7 +84,11 @@ fun LoginScreen(
             enabled = !uiState.isLoading
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(size = 24.dp, color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Login")
             }
@@ -96,7 +100,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
         
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
         Button(
             onClick = onNavigateToPhoneAuth,

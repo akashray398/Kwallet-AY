@@ -3,6 +3,7 @@ package com.example.kwalletay.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kwalletay.data.repository.DepositRepository
+import com.example.kwalletay.data.repository.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,11 +59,16 @@ class DepositViewModel(private val repository: DepositRepository) : ViewModel() 
 
         viewModelScope.launch {
             _uiState.value = DepositUiState.Loading
-            val result = repository.processDeposit(amountVal, _selectedMethod.value)
-            result.onSuccess { transaction ->
-                _uiState.value = DepositUiState.Success(transaction)
-            }.onFailure { exception ->
-                _uiState.value = DepositUiState.Error(exception.message ?: "Transaction failed")
+            when (val result = repository.processDeposit(amountVal, _selectedMethod.value)) {
+                is Result.Success -> {
+                    _uiState.value = DepositUiState.Success(result.data)
+                }
+                is Result.Error -> {
+                    _uiState.value = DepositUiState.Error(result.message)
+                }
+                is Result.Loading -> {
+                    _uiState.value = DepositUiState.Loading
+                }
             }
         }
     }

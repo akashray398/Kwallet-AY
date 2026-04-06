@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kwalletay.data.model.User
 import com.example.kwalletay.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
