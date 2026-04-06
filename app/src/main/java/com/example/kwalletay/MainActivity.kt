@@ -22,10 +22,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.kwalletay.data.local.AppDatabase
+import com.example.kwalletay.data.repository.TransactionRepository
 import com.example.kwalletay.ui.navigation.Screen
 import com.example.kwalletay.ui.navigation.bottomNavItems
 import com.example.kwalletay.ui.screens.*
 import com.example.kwalletay.ui.theme.KwalletTheme
+import com.example.kwalletay.ui.viewmodel.TransactionHistoryViewModel
 import com.example.kwalletay.ui.viewmodel.TransferViewModel
 import com.example.kwalletay.ui.viewmodel.ViewModelFactory
 
@@ -129,20 +132,23 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.Home.route) {
                             HomeScreen(
-                                onProfileClick = { startActivity(Intent(this@MainActivity, ProfileActivity::class.java)) },
+                                onProfileClick = { navController.navigate(Screen.Profile.route) },
                                 onNotificationClick = { /* Handle */ },
-                                onSettingsClick = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
-                                onDepositClick = { startActivity(Intent(this@MainActivity, DepositActivity::class.java)) },
+                                onSettingsClick = { /* Handle */ },
+                                onDepositClick = { navController.navigate(Screen.Deposit.route) },
                                 onPaybillClick = { navController.navigate(Screen.PayBill.route) },
                                 onTransferClick = { navController.navigate(Screen.Transfer.route) },
                                 onReferClick = { navController.navigate(Screen.ReferAndEarn.route) },
-                                onSeeAllClick = { startActivity(Intent(this@MainActivity, HistoryActivity::class.java)) }
+                                onSeeAllClick = { navController.navigate(Screen.History.route) }
                             )
                         }
                         composable(Screen.PayBill.route) {
                             PayBillScreen(
                                 onBackClick = { navController.popBackStack() }
                             )
+                        }
+                        composable(Screen.Deposit.route) {
+                            DepositScreen(onBackClick = { navController.popBackStack() })
                         }
                         composable(Screen.Transfer.route) {
                             val context = LocalContext.current
@@ -160,8 +166,33 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screen.Explorer.route) { /* Explorer Screen */ }
-                        composable(Screen.History.route) { /* History Screen */ }
+                        composable(Screen.History.route) {
+                            val context = LocalContext.current
+                            val historyViewModel: TransactionHistoryViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
+                            TransactionHistoryScreen(
+                                viewModel = historyViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onTransactionClick = { id ->
+                                    navController.navigate(Screen.TransactionDetail.createRoute(id))
+                                }
+                            )
+                        }
                         composable(Screen.Profile.route) { /* Profile Screen */ }
+                        composable(
+                            route = Screen.TransactionDetail.route,
+                            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val context = LocalContext.current
+                            val transactionId = backStackEntry.arguments?.getInt("transactionId") ?: 0
+                            val repository = TransactionRepository(AppDatabase.getDatabase(context).transactionDao())
+                            TransactionDetailScreen(
+                                transactionId = transactionId,
+                                repository = repository,
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
                     }
                 }
             }

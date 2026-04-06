@@ -28,6 +28,9 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Deposit : Screen("deposit", "Deposit")
     object Transfer : Screen("transfer", "Transfer")
     object ReferAndEarn : Screen("refer_and_earn", "Refer & Earn")
+    object TransactionDetail : Screen("transaction_detail/{transactionId}", "Transaction Detail") {
+        fun createRoute(transactionId: Int) = "transaction_detail/$transactionId"
+    }
 }
 
 val bottomNavItems = listOf(
