@@ -15,6 +15,10 @@ class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory
         val transactionRepository = TransactionRepository(transactionDao)
         
         return when {
+            modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
+                @Suppress("UNCHECKED_CAST")
+                HomeViewModel(transactionRepository) as T
+            }
             modelClass.isAssignableFrom(DepositViewModel::class.java) -> {
                 val repository = DepositRepository(transactionDao)
                 @Suppress("UNCHECKED_CAST")

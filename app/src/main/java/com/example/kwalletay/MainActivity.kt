@@ -28,6 +28,7 @@ import com.example.kwalletay.ui.navigation.Screen
 import com.example.kwalletay.ui.navigation.bottomNavItems
 import com.example.kwalletay.ui.screens.*
 import com.example.kwalletay.ui.theme.KwalletTheme
+import com.example.kwalletay.ui.viewmodel.HomeViewModel
 import com.example.kwalletay.ui.viewmodel.TransactionHistoryViewModel
 import com.example.kwalletay.ui.viewmodel.TransferViewModel
 import com.example.kwalletay.ui.viewmodel.ViewModelFactory
@@ -131,7 +132,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screen.Home.route) {
+                            val context = LocalContext.current
+                            val homeViewModel: HomeViewModel = viewModel(
+                                factory = ViewModelFactory(context)
+                            )
                             HomeScreen(
+                                viewModel = homeViewModel,
                                 onProfileClick = { navController.navigate(Screen.Profile.route) },
                                 onNotificationClick = { /* Handle */ },
                                 onSettingsClick = { /* Handle */ },

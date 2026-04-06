@@ -3,11 +3,16 @@ package com.example.kwalletay
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.kwalletay.data.local.AppDatabase
 import com.example.kwalletay.data.local.TransactionEntity
+import com.example.kwalletay.data.repository.TransactionRepository
 import com.example.kwalletay.ui.screens.DepositScreen
 import com.example.kwalletay.ui.screens.SuccessScreen
 import com.example.kwalletay.ui.theme.KwalletTheme
@@ -20,8 +25,11 @@ class DepositActivity : ComponentActivity() {
         setContent {
             KwalletTheme {
                 val navController = rememberNavController()
+                val context = LocalContext.current
+
+                // Initialize ViewModel using the shared factory
                 val viewModel: DepositViewModel = viewModel(
-                    factory = ViewModelFactory(this)
+                    factory = ViewModelFactory(context)
                 )
 
                 NavHost(navController = navController, startDestination = "deposit_input") {
@@ -30,29 +38,28 @@ class DepositActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onBackClick = { finish() },
                             onSuccess = { transaction ->
-                                // Using transaction as TransactionEntity
+                                // Cast Any to TransactionEntity and use the auto-generated 'id'
                                 val txn = transaction as TransactionEntity
-                                navController.navigate("success/${txn.transactionId}/${txn.amount}/${txn.date}/${txn.paymentMethod}")
+                                navController.navigate("success/${txn.id}") {
+                                    popUpTo("deposit_input") { inclusive = true }
+                                }
                             }
                         )
                     }
-                    composable("success/{txnId}/{amount}/{date}/{method}") { backStackEntry ->
-                        val txnId = backStackEntry.arguments?.getString("txnId") ?: ""
-                        val amount = backStackEntry.arguments?.getString("amount")?.toDoubleOrNull() ?: 0.0
-                        val date = backStackEntry.arguments?.getString("date") ?: ""
-                        val method = backStackEntry.arguments?.getString("method") ?: ""
-                        
+
+                    composable(
+                        route = "success/{id}",
+                        arguments = listOf(navArgument("id") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getInt("id") ?: 0
+                        val repository = TransactionRepository(AppDatabase.getDatabase(context).transactionDao())
+
                         SuccessScreen(
-                            transaction = TransactionEntity(
-                                transactionId = txnId,
-                                amount = amount,
-                                date = date,
-                                paymentMethod = method,
-                                title = "Deposit to Wallet"
-                            ),
+                            transactionId = id,
+                            repository = repository,
                             onBackHome = { finish() },
-                            onViewTransactions = {
-                                // Navigate to history or finish with a result
+                            onViewHistory = {
+                                // Finish and return to MainActivity to view history
                                 finish()
                             }
                         )

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: TransactionRepository = TransactionRepository()
+    private val repository: TransactionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -27,12 +27,12 @@ class HomeViewModel(
         viewModelScope.launch {
             combine(
                 repository.getBalance(),
-                repository.getTransactions()
+                repository.getAllTransactions()
             ) { balance, transactions ->
                 HomeUiState(
                     isLoading = false,
                     isRefreshing = false,
-                    balance = balance,
+                    balance = "₹${String.format("%.2f", balance ?: 0.0)}",
                     transactions = transactions,
                     errorMessage = null
                 )

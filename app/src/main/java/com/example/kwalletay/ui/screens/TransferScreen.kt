@@ -30,9 +30,29 @@ import com.example.kwalletay.ui.viewmodel.TransferViewModel
 @Composable
 fun TransferScreen(
     viewModel: TransferViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onSuccess: (Int) -> Unit,
+    onFailure: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.successTransactionId) {
+        uiState.successTransactionId?.let { id ->
+            onSuccess(id)
+            viewModel.resetState()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            if (!uiState.showConfirmation && !uiState.isLoading) {
+                // We might want to show this via onFailure if it's a fatal error
+                // but for field validation errors we usually show it in the UI.
+                // Let's assume FATAL errors (like API failure) should go to onFailure screen.
+                // For now, let's just keep field validation in UI and potentially move others.
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -179,30 +199,6 @@ fun TransferScreen(
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissConfirmation() }) {
                     Text("Cancel")
-                }
-            }
-        )
-    }
-
-    // Result Dialog
-    uiState.transferResult?.let { result ->
-        AlertDialog(
-            onDismissRequest = { 
-                viewModel.resetResult()
-                onBackClick()
-            },
-            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(64.dp)) },
-            title = { Text("Transfer Successful") },
-            text = { Text("₹${uiState.amount} has been transferred to ${uiState.recipient} successfully.") },
-            confirmButton = {
-                Button(
-                    onClick = { 
-                        viewModel.resetResult()
-                        onBackClick()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Back to Home")
                 }
             }
         )
