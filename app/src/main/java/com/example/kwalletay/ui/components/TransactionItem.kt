@@ -15,14 +15,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.kwalletay.Model.Transection
+import com.example.kwalletay.data.local.TransactionEntity
+import com.example.kwalletay.data.local.TransactionType
 import com.example.kwalletay.R
 import com.example.kwalletay.ui.theme.LightGreen
 import com.example.kwalletay.ui.theme.LightRed
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun TransactionItem(
-    transaction: Transection,
+    transaction: TransactionEntity,
     onClick: () -> Unit = {}
 ) {
     Row(
@@ -35,7 +38,7 @@ fun TransactionItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val isPositive = transaction.price > 0
+        val isPositive = transaction.type == TransactionType.CREDIT
         val iconBackground = if (isPositive) LightGreen else LightRed
         val iconRes = if (isPositive) R.drawable.deposite else R.drawable.transfer
 
@@ -61,15 +64,17 @@ fun TransactionItem(
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
+            val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+            val dateString = sdf.format(Date(transaction.date))
             Text(
-                text = transaction.date,
+                text = dateString,
                 fontSize = 14.sp,
                 color = Color.Gray
             )
         }
 
         Text(
-            text = if (isPositive) "+₹${transaction.price}" else "-₹${Math.abs(transaction.price)}",
+            text = if (isPositive) "+₹${transaction.amount}" else "-₹${transaction.amount}",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = if (isPositive) Color(0xFF10972C) else Color(0xFFA50D0D)
