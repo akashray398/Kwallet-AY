@@ -2,37 +2,36 @@ package com.example.kwalletay.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.kwalletay.data.repository.TransactionRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.update
+import com.example.kwalletay.data.repository.FirestoreRepository
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: TransactionRepository
+    private val repository: FirestoreRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val auth = FirebaseAuth.getInstance()
 
     init {
         loadHomeData()
     }
 
     fun loadHomeData() {
+        val userId = auth.currentUser?.uid ?: return
+        
         viewModelScope.launch {
             combine(
-                repository.getBalance(),
-                repository.getAllTransactions()
+                repository.getUserBalance(userId),
+                repository.getTransactions(userId)
             ) { balance, transactions ->
                 HomeUiState(
                     isLoading = false,
                     isRefreshing = false,
-                    balance = "₹${String.format("%.2f", balance ?: 0.0)}",
+                    balance = "₹${String.format("%.2f", balance)}",
                     transactions = transactions,
                     errorMessage = null
                 )

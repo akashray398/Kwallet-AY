@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -17,7 +18,8 @@ import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
 
 class AuthRepositoryImpl(
-    private val firebaseAuth: FirebaseAuth = try { FirebaseAuth.getInstance() } catch (e: Exception) { null } ?: throw IllegalStateException("Firebase not initialized")
+    private val firebaseAuth: FirebaseAuth = try { FirebaseAuth.getInstance() } catch (e: Exception) { null } ?: throw IllegalStateException("Firebase not initialized"),
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : AuthRepository {
 
     override val currentUser: User?
@@ -39,21 +41,54 @@ class AuthRepositoryImpl(
         emit(AuthResource.Loading)
         try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-            result.user?.let {
-                emit(AuthResource.Success(it.toUser()))
-            } ?: emit(AuthResource.Error("Signup failed"))
+            val firebaseUser = result.user
+            if (firebaseUser != null) {
+                val newUser = User(
+                    uid = firebaseUser.uid,
+                    email = firebaseUser.email,
+                    displayName = firebaseUser.displayName,
+                    balance = 0.0,
+                    referralCode = generateReferralCode(firebaseUser.uid)
+                )
+                // Create user document in Firestore
+                firestore.collection("users").document(firebaseUser.uid).set(newUser).await()
+                emit(AuthResource.Success(newUser))
+            } else {
+                emit(AuthResource.Error("Signup failed"))
+            }
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Signup failed"))
         }
+    }
+
+    private fun generateReferralCode(userId: String): String {
+        return "KW" + userId.takeLast(4).uppercase() + (100..999).random()
     }
 
     override fun signInWithCredential(credential: AuthCredential): Flow<AuthResource<User>> = flow {
         emit(AuthResource.Loading)
         try {
             val result = firebaseAuth.signInWithCredential(credential).await()
-            result.user?.let {
-                emit(AuthResource.Success(it.toUser()))
-            } ?: emit(AuthResource.Error("Sign in failed"))
+            val firebaseUser = result.user
+            if (firebaseUser != null) {
+                // Check if user exists in Firestore, if not create them
+                val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
+                if (!userDoc.exists()) {
+                    val newUser = User(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName,
+                        balance = 0.0,
+                        referralCode = generateReferralCode(firebaseUser.uid)
+                    )
+                    firestore.collection("users").document(firebaseUser.uid).set(newUser).await()
+                    emit(AuthResource.Success(newUser))
+                } else {
+                    emit(AuthResource.Success(userDoc.toObject(User::class.java)!!))
+                }
+            } else {
+                emit(AuthResource.Error("Sign in failed"))
+            }
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Sign in failed"))
         }
@@ -90,9 +125,25 @@ class AuthRepositoryImpl(
         try {
             val credential = PhoneAuthProvider.getCredential(verificationId, otp)
             val result = firebaseAuth.signInWithCredential(credential).await()
-            result.user?.let {
-                emit(AuthResource.Success(it.toUser()))
-            } ?: emit(AuthResource.Error("OTP Verification failed"))
+            val firebaseUser = result.user
+            if (firebaseUser != null) {
+                val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
+                if (!userDoc.exists()) {
+                    val newUser = User(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName,
+                        balance = 0.0,
+                        referralCode = generateReferralCode(firebaseUser.uid)
+                    )
+                    firestore.collection("users").document(firebaseUser.uid).set(newUser).await()
+                    emit(AuthResource.Success(newUser))
+                } else {
+                    emit(AuthResource.Success(userDoc.toObject(User::class.java)!!))
+                }
+            } else {
+                emit(AuthResource.Error("OTP Verification failed"))
+            }
         } catch (e: Exception) {
             emit(AuthResource.Error(e.localizedMessage ?: "Invalid OTP"))
         }

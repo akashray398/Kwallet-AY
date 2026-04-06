@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // alias(libs.plugins.google.services) // Commented out to fix missing google-services.json error
+    alias(libs.plugins.google.services)
     id("com.google.devtools.ksp") version "2.0.21-1.0.25"
 }
 
@@ -82,6 +82,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     implementation(libs.play.services.auth)
 
     // Lottie

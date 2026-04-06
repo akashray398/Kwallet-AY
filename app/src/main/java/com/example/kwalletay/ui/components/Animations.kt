@@ -1,9 +1,8 @@
 package com.example.kwalletay.ui.components
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -14,10 +13,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.airbnb.lottie.compose.*
+import androidx.compose.foundation.background
 
 @Composable
 fun LottieAnimationView(
@@ -75,11 +76,16 @@ fun Modifier.bounceClick() = composed {
     this.graphicsLayer {
         scaleX = scale
         scaleY = scale
-    }.clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = { /* Set pressed state if needed or handle externally */ }
-    )
+    }.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                awaitFirstDown(false)
+                isPressed = true
+                waitForUpOrCancellation()
+                isPressed = false
+            }
+        }
+    }
 }
 
 @Composable

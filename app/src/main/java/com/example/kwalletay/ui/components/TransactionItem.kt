@@ -15,8 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.kwalletay.data.local.TransactionEntity
-import com.example.kwalletay.data.local.TransactionType
+import com.example.kwalletay.data.model.Transaction
 import com.example.kwalletay.R
 import com.example.kwalletay.ui.theme.LightGreen
 import com.example.kwalletay.ui.theme.LightRed
@@ -25,7 +24,7 @@ import java.util.*
 
 @Composable
 fun TransactionItem(
-    transaction: TransactionEntity,
+    transaction: Transaction,
     onClick: () -> Unit = {}
 ) {
     Row(
@@ -38,7 +37,7 @@ fun TransactionItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val isPositive = transaction.type == TransactionType.CREDIT
+        val isPositive = transaction.type == "CREDIT"
         val iconBackground = if (isPositive) LightGreen else LightRed
         val iconRes = if (isPositive) R.drawable.deposite else R.drawable.transfer
 
@@ -65,7 +64,7 @@ fun TransactionItem(
                 color = Color.Black
             )
             val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-            val dateString = sdf.format(Date(transaction.date))
+            val dateString = sdf.format(Date(transaction.timestamp))
             Text(
                 text = dateString,
                 fontSize = 14.sp,

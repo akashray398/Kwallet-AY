@@ -2,34 +2,38 @@ package com.example.kwalletay.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.kwalletay.data.local.TransactionEntity
-import com.example.kwalletay.data.local.TransactionType
-import com.example.kwalletay.data.repository.TransactionRepository
+import com.example.kwalletay.data.model.Transaction
+import com.example.kwalletay.data.repository.FirestoreRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class TransactionHistoryUiState(
-    val transactions: List<TransactionEntity> = emptyList(),
+    val transactions: List<Transaction> = emptyList(),
     val searchQuery: String = "",
-    val selectedType: TransactionType? = null,
+    val selectedType: String? = null, // "CREDIT", "DEBIT", or null
     val isLoading: Boolean = false
 )
 
-class TransactionHistoryViewModel(private val repository: TransactionRepository) : ViewModel() {
+class TransactionHistoryViewModel(private val repository: FirestoreRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionHistoryUiState())
     val uiState: StateFlow<TransactionHistoryUiState> = _uiState.asStateFlow()
+    
+    private val auth = FirebaseAuth.getInstance()
 
     init {
         loadTransactions()
     }
 
     private fun loadTransactions() {
+        val userId = auth.currentUser?.uid ?: return
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             
             combine(
-                repository.getAllTransactions(),
+                repository.getTransactions(userId),
                 _uiState.map { it.searchQuery }.distinctUntilChanged(),
                 _uiState.map { it.selectedType }.distinctUntilChanged()
             ) { allTransactions, query, type ->
@@ -49,7 +53,7 @@ class TransactionHistoryViewModel(private val repository: TransactionRepository)
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun onTypeFilterChange(type: TransactionType?) {
+    fun onTypeFilterChange(type: String?) {
         _uiState.update { it.copy(selectedType = type) }
     }
 }

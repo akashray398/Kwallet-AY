@@ -18,9 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.kwalletay.data.local.TransactionEntity
-import com.example.kwalletay.data.local.TransactionStatus
-import com.example.kwalletay.data.local.TransactionType
+import com.example.kwalletay.data.model.Transaction
 import com.example.kwalletay.ui.viewmodel.TransactionHistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,7 +28,7 @@ import java.util.*
 fun TransactionHistoryScreen(
     viewModel: TransactionHistoryViewModel,
     onBackClick: () -> Unit,
-    onTransactionClick: (Int) -> Unit
+    onTransactionClick: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -76,13 +74,13 @@ fun TransactionHistoryScreen(
                     label = { Text("All") }
                 )
                 FilterChip(
-                    selected = uiState.selectedType == TransactionType.CREDIT,
-                    onClick = { viewModel.onTypeFilterChange(TransactionType.CREDIT) },
+                    selected = uiState.selectedType == "CREDIT",
+                    onClick = { viewModel.onTypeFilterChange("CREDIT") },
                     label = { Text("Credit") }
                 )
                 FilterChip(
-                    selected = uiState.selectedType == TransactionType.DEBIT,
-                    onClick = { viewModel.onTypeFilterChange(TransactionType.DEBIT) },
+                    selected = uiState.selectedType == "DEBIT",
+                    onClick = { viewModel.onTypeFilterChange("DEBIT") },
                     label = { Text("Debit") }
                 )
             }
@@ -116,7 +114,7 @@ fun TransactionHistoryScreen(
 
 @Composable
 fun TransactionCard(
-    transaction: TransactionEntity,
+    transaction: Transaction,
     onClick: () -> Unit
 ) {
     Card(
@@ -133,8 +131,9 @@ fun TransactionCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon
-            val icon = if (transaction.type == TransactionType.CREDIT) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
-            val iconColor = if (transaction.type == TransactionType.CREDIT) Color(0xFF4CAF50) else Color(0xFFF44336)
+            val isCredit = transaction.type == "CREDIT"
+            val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
+            val iconColor = if (isCredit) Color(0xFF4CAF50) else Color(0xFFF44336)
             
             Box(
                 modifier = Modifier
@@ -156,7 +155,7 @@ fun TransactionCard(
                     fontSize = 16.sp
                 )
                 Text(
-                    text = formatDate(transaction.date),
+                    text = formatDate(transaction.timestamp),
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
@@ -165,7 +164,7 @@ fun TransactionCard(
             // Amount
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${if (transaction.type == TransactionType.CREDIT) "+" else "-"}₹${transaction.amount}",
+                    text = "${if (isCredit) "+" else "-"}₹${transaction.amount}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = iconColor
@@ -177,11 +176,11 @@ fun TransactionCard(
 }
 
 @Composable
-fun StatusBadge(status: TransactionStatus) {
-    val (color, text) = when (status) {
-        TransactionStatus.SUCCESS -> Color(0xFF4CAF50) to "Success"
-        TransactionStatus.FAILED -> Color(0xFFF44336) to "Failed"
-        TransactionStatus.PENDING -> Color(0xFFFFC107) to "Pending"
+fun StatusBadge(status: String) {
+    val (color, text) = when (status.uppercase()) {
+        "SUCCESS" -> Color(0xFF4CAF50) to "Success"
+        "FAILED" -> Color(0xFFF44336) to "Failed"
+        else -> Color(0xFFFFC107) to "Pending"
     }
     
     Surface(
